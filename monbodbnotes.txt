@@ -1,0 +1,219 @@
+mongo mongodb+srv://m001-student:m001-mongodb-basics@cluster0-jxeqq.mongodb.net/test
+
+mongo "mongodb+srv://mongocluster1-sj59u.mongodb.net/admin" --username newuser1 --password newuser1
+
+cluster0-jxeqq.mongodb.net:27017
+
+load(C:\Users\prade\M001\loadMovieDetailsDataset.js
+
+Basic Adminstration:
+
+# mongod.conf
+
+# for documentation of all options, see:
+#   http://docs.mongodb.org/manual/reference/configuration-options/
+
+mongod --dbpath /data/db --logpath /data/log/mongod.log --fork --replSet "M103" --keyFile /data/keyfile --bind_ip "127.0.0.1,192.168.103.100" 
+	--tlsMode requireTLS --tlsCAFile "/etc/tls/TLSCA.pem" --tlsCertificateKeyFile "/etc/tls/tls.pem"
+Below is same as above
+
+storage:
+  dbPath: "/data/db"
+systemLog:
+  path: "/data/log/mongod.log"
+  destination: "file"
+replication:
+  replSetName: M103
+net:
+  bindIp : "127.0.0.1,192.168.103.100"
+tls:
+  mode: "requireTLS"
+  certificateKeyFile: "/etc/tls/tls.pem"
+  CAFile: "/etc/tls/TLSCA.pem"
+security:
+  keyFile: "/data/keyfile"
+processManagement:
+  fork: true
+  
+Use full command
+db.stats()
+  
+User management commands:
+
+db.createUser()
+db.dropUser()
+ -------
+Collection management commands:
+
+db.<collection>.renameCollection()
+db.<collection>.createIndex()
+db.<collection>.drop()
+ -------
+Database management commands:
+
+db.dropDatabase()
+db.createCollection()
+ -------
+Database status command:
+
+db.serverStatus()
+
+db.runCommand(
+  { "createIndexes": <collection> },
+  { "indexes": [
+    {
+      "key": { "product": 1 }
+    },
+    { "name": "name_index" }
+    ]
+  }
+)
+ -------
+Creating index with Shell Helper:
+
+db.<collection>.createIndex(
+  { "product": 1 },
+  { "name": "name_index" }
+)
+
+Logging
+
+db.getLogComponents()
+
+db.setLogLevel(0, "index")
+
+db.adminCommand({ "getLog": "global" })
+
+tail -f /data/db/mongod.log
+
+From Mongo 4 above show collections onadmin is depricated
+db.runCommand({listCollections: 1})
+
+--Profile are used to show operations performed and its stats
+
+db.getProfilingLevel()  0 (default), 1 (only more than 100 ms), 2 is every thing
+
+ db.setProfilingLevel(1)
+
+ db.getCollectionNames()
+ 
+ db.system.profile.find().pretty()
+ 
+ --Security
+ 4 types client authenication:
+ 
+ For Community:
+ SCRAM-Salted challenge response authentication mecanism
+ x.509 security
+ 
+ For Enterprise:
+ 3) LDAP
+ 4)KERBEROS
+ 
+ Inter cluser Authentication:
+ To communicate between inter clustors
+ 
+ Authorization:
+ 
+ User --user has Roles--Roles has priveleges- Privileges reprasent one or more actions
+
+-->First time when MongoDB created, no default user will be created, we have to create one using localhost exception (i.e by using localhost to connect db and create admin user)
+
+use admin
+db.createUser({
+  user: "root",
+  pwd: "root123",
+  roles : [ "root" ]
+})
+
+
+mongo --username root --password root123 --authenticationDatabase admin
+
+Built in Roles---
+Pre packaged mongodb roles:
+
+1) Database User -(read,readWrite)
+2)database Admin - (dbAdmin,userAdmin,dbOwner)
+3) ClisterAdmin - (clusterAdmin,cluserManager,clustorMonitor,hostManager)
+4) Backup/restore- (backup,restore)
+5) superuser-- root
+
+can do 
+db.createUser(
+  { user: "security_officer",
+    pwd: "h3ll0th3r3",
+    roles: [ { db: "admin", role: "userAdmin" } ]
+  }
+)
+
+db.createUser(
+  { user: "dba",
+    pwd: "c1lynd3rs",
+    roles: [ { db: "admin", role: "dbAdmin" } ]
+  }
+)
+
+db.grantRolesToUser( "dba",  [ { db: "playground", role: "dbOwner"  } ] )
+
+db.runCommand( { rolesInfo: { role: "dbOwner", db: "playground" }, showPrivileges: true} )
+
+dbOwner = dbAdmin + userAdmin + read wtire
+
+
+Use mongostat to get stats on a running mongod process:
+
+mongostat --help
+mongostat --port 30000
+ -------
+Use mongodump to get a BSON dump of a MongoDB collection:
+
+mongodump --help
+mongodump --port 30000 --db applicationData --collection products
+ls dump/applicationData/
+cat dump/applicationData/products.metadata.json
+ -------
+Use mongorestore to restore a MongoDB collection from a BSON dump:
+
+mongorestore --drop --port 30000 dump/
+ -------
+Use mongoexport to export a MongoDB collection to JSON or CSV (or stdout!):
+
+mongoexport --help
+mongoexport --port 30000 --db applicationData --collection products
+mongoexport --port 30000 --db applicationData --collection products -o products.json
+ -------
+Tail the exported JSON file:
+
+tail products.json
+ -------
+Use mongoimport to create a MongoDB collection from a JSON or CSV file:
+
+mongoimport --port 30000 products.json
+
+Replication:
+
+There are two types of replications
+binary replication and statement-based replication
+
+ReplicaSet:
+
+Each node in replicaSet has one or more roles 1) PRIMARY 2) Secondary 3) Arbitary 4) Hidden 5) Delayoed
+Once Primary receives read or write from client app, it will replicate to secondary using Asyncronus replicaation
+
+
+storage:
+  dbPath: E:/Study/mongo/repl/node1
+net:
+  bindIp: 192.168.103.100,localhost
+  port: 27011
+security:
+  authorization: enabled
+  keyFile: E:/Study/mongo/repl/pk1/m103-keyfile
+systemLog:
+  destination: file
+  path: E:/Study/mongo/repl/node1/mongod.log
+  logAppend: true
+processManagement:
+  fork: true
+replication:
+  replSetName: m103-example
